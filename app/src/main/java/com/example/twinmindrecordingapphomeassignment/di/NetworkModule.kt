@@ -17,7 +17,7 @@ object NetworkModule {
     @Provides
     @Named("openai_api_key")
     fun provideOpenAIApiKey(): String {
-        return  "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" // Store this securely
+        return  "" // Store this securely
     }
 
     @Provides

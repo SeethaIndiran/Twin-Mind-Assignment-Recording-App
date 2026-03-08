@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,13 +23,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
 
-        val openAiKey = System.getenv("OPENAI_API_KEY") ?: ""
+      /*  val openAiKey = System.getenv("OPENAI_API_KEY") ?: ""
         val whisperKey = System.getenv("WHISPER_API_KEY") ?: ""
 
         buildConfigField("String", "OPENAI_API_KEY", "\"$openAiKey\"")
-        buildConfigField("String", "WHISPER_API_KEY", "\"$whisperKey\"")
+        buildConfigField("String", "WHISPER_API_KEY", "\"$whisperKey\"")*/
 
 
+
+
+
+
+    }
+
+    val ppties = Properties()
+    val file = File(rootDir,"secret.properties")
+    if(file.exists() && file.isFile){
+        file.inputStream().use{
+            ppties.load(it)
+        }
     }
 
     androidResources {
@@ -41,6 +55,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            buildConfigField("String", "OPENAI_API_KEY", ppties.getProperty("OPENAI_API_KEY"))
+        }
+        debug {
+            buildConfigField("String", "OPENAI_API_KEY", ppties.getProperty("OPENAI_API_KEY"))
         }
     }
     compileOptions {

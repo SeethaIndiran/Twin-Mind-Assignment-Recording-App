@@ -1,6 +1,7 @@
 package com.example.twinmindrecordingapphomeassignment.data.remote.api
 
 import com.example.twinmindhomeassignmentrecordingapp.domain.model.MeetingSummary
+import com.example.twinmindrecordingapphomeassignment.BuildConfig
 import com.example.twinmindrecordingapphomeassignment.data.remote.dto.SummaryRequest
 import com.example.twinmindrecordingapphomeassignment.data.remote.dto.SummaryResponse
 import com.example.twinmindrecordingapphomeassignment.data.remote.dto.TranscriptionResponse
@@ -171,7 +172,7 @@ class WhisperApiService @Inject constructor(
 
         val request = Request.Builder()
             .url("https://api.openai.com/v1/audio/transcriptions")
-            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
             .post(requestBody)
             .build()
 
@@ -215,7 +216,7 @@ class ChatGptService @Inject constructor(
 
         val request = Request.Builder()
             .url("https://api.openai.com/v1/chat/completions")
-            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
             .addHeader("Content-Type", "application/json")
             .post(requestBody.toRequestBody("application/json".toMediaType()))
             .build()
