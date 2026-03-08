@@ -10,6 +10,7 @@ import com.example.twinmindrecordingapphomeassignment.data.local.dao.RecordingSe
 import com.example.twinmindrecordingapphomeassignment.data.local.database.VoiceRecorderDatabase
 import com.example.twinmindrecordingapphomeassignment.data.remote.api.ChatGptService
 import com.example.twinmindrecordingapphomeassignment.data.remote.api.MockTranscriptionService
+import com.example.twinmindrecordingapphomeassignment.data.remote.api.WhisperApiService
 import com.example.twinmindrecordingapphomeassignment.data.repository.RecordingRepository
 import com.example.twinmindrecordingapphomeassignment.service.AudioFocusManager
 import com.google.gson.Gson
@@ -73,7 +74,7 @@ object AppModule {
         audioChunkDao: AudioChunkDao,
         sessionDao: RecordingSessionDao,
          chatGptService: ChatGptService,
-        transcriptionService: MockTranscriptionService,
+        transcriptionService: WhisperApiService,
         gson: Gson
     ): RecordingRepository {
         return RecordingRepository(

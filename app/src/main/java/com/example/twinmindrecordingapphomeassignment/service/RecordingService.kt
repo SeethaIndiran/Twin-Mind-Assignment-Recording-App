@@ -113,6 +113,7 @@ class RecordingService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+    
 
     private fun startRecording(recordingId: String) {
         if (ActivityCompat.checkSelfPermission(
@@ -196,7 +197,7 @@ class RecordingService : Service() {
         audioInputStream = resources.openRawResource(currentAudioResource!!)
     }
 
-    private suspend fun recordAudioChunks(bufferSize: Int) {
+  /*  private suspend fun recordAudioChunks(bufferSize: Int) {
         val buffer = ShortArray(bufferSize)
         var chunkBuffer = mutableListOf<Short>()
         val samplesPerChunk = (SAMPLE_RATE * CHUNK_DURATION_MS / 1000).toInt()
@@ -205,8 +206,8 @@ class RecordingService : Service() {
         var silenceStartTime = 0L
         var isSilent = false
 
-     /*   while (recordingJob?.isActive == true && !isPaused ) {
-         //   val readSize = audioRecord?.read(buffer, 0, bufferSize) ?: 0
+        while (recordingJob?.isActive == true && !isPaused ) {
+          /*  val readSize = audioRecord?.read(buffer, 0, bufferSize) ?: 0
             val readSize = if (audioRecord != null) {
                 // Generate random audio data to simulate speech
                 for (i in buffer.indices) {
@@ -216,6 +217,7 @@ class RecordingService : Service() {
             } else {
                 0
             }*/
+
         while (recordingJob?.isActive == true && !isPaused) {
             if (audioInputStream == null) {
                 initializeRandomTestAudio()
@@ -288,7 +290,77 @@ class RecordingService : Service() {
         if (chunkBuffer.isNotEmpty() && !isPaused) {
             saveChunk(chunkBuffer.toShortArray())
         }
-    }
+    }*/
+  private suspend fun recordAudioChunks(bufferSize: Int) {
+      val buffer = ShortArray(bufferSize)
+      var chunkBuffer = mutableListOf<Short>()
+      val samplesPerChunk = (SAMPLE_RATE * CHUNK_DURATION_MS / 1000).toInt()
+      val overlapSamples = (SAMPLE_RATE * OVERLAP_MS / 1000).toInt()
+
+      var silenceStartTime = 0L
+      var isSilent = false
+
+      while (recordingJob?.isActive == true && !isPaused) {
+          val readSize = if (audioRecord != null && audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+              // Read real microphone audio
+              audioRecord!!.read(buffer, 0, buffer.size)
+          } else {
+              // Fallback: read from test audio
+              if (audioInputStream == null) initializeRandomTestAudio()
+
+              val byteBuffer = ByteArray(buffer.size * 2)
+              val bytesRead = audioInputStream?.read(byteBuffer) ?: 0
+              if (bytesRead > 0) {
+                  for (i in 0 until bytesRead / 2) {
+                      buffer[i] = ((byteBuffer[i * 2 + 1].toInt() shl 8) or
+                              (byteBuffer[i * 2].toInt() and 0xFF)).toShort()
+                  }
+                  bytesRead / 2
+              } else {
+                  initializeRandomTestAudio()
+                  0
+              }
+          }
+
+          if (readSize > 0) {
+              // Check for silence
+              val avgAmplitude = buffer.take(readSize).map { kotlin.math.abs(it.toInt()) }.average()
+              if (avgAmplitude < SILENCE_THRESHOLD) {
+                  if (silenceStartTime == 0L) silenceStartTime = System.currentTimeMillis()
+                  else if (System.currentTimeMillis() - silenceStartTime > SILENCE_DURATION_MS && !isSilent) {
+                      isSilent = true
+                      notifyWarning("No audio detected - Check microphone")
+                  }
+              } else {
+                  silenceStartTime = 0L
+                  if (isSilent) {
+                      isSilent = false
+                      updateNotification("Recording...", getCurrentDuration())
+                  }
+              }
+
+              // Add to chunk buffer
+              chunkBuffer.addAll(buffer.take(readSize).toList())
+
+              // Save chunk if full
+              if (chunkBuffer.size >= samplesPerChunk) {
+                  saveChunk(chunkBuffer.toShortArray())
+                  chunkBuffer = chunkBuffer.takeLast(overlapSamples).toMutableList()
+                  chunkSequence++
+              }
+          }
+
+          // Low storage check
+          if (!hasEnoughStorage()) {
+              notifyError("Recording stopped - Low storage")
+              withContext(Dispatchers.Main) { stopRecording() }
+              break
+          }
+      }
+
+      // Save remaining buffer if any
+      if (chunkBuffer.isNotEmpty() && !isPaused) saveChunk(chunkBuffer.toShortArray())
+  }
 
     private suspend fun saveChunk(audioData: ShortArray) {
         val recordingId = currentRecordingId ?: return
@@ -372,7 +444,7 @@ class RecordingService : Service() {
     }
 
     private fun stopRecording() {
-        isPaused = false
+      /*  isPaused = false
 
         audioRecord?.stop()
         audioRecord?.release()
@@ -387,6 +459,35 @@ class RecordingService : Service() {
 
         serviceScope.launch {
             currentRecordingId?.let { id ->
+                repository.updateRecordingStatus(id, RecordingStatus.PROCESSING)
+                repository.updateRecordingDuration(id, duration)
+                repository.clearSession()
+            }
+        }
+
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()*/
+        isPaused = false
+
+        audioRecord?.stop()
+        audioRecord?.release()
+        audioRecord = null
+
+        recordingJob?.cancel()
+        timerJob?.cancel()
+        audioFocusManager.abandonAudioFocus()
+
+        val duration = getCurrentDuration()
+
+        serviceScope.launch {
+            currentRecordingId?.let { id ->
+                // Check if audio chunks exist
+                val recordingDir = getRecordingDir(id)
+                if (!recordingDir.exists() || recordingDir.listFiles()?.isEmpty() != false) {
+                    // If no real audio recorded, insert mock chunk
+                    saveChunk(ShortArray((SAMPLE_RATE * CHUNK_DURATION_MS / 1000).toInt()) { 0 })
+                }
+
                 repository.updateRecordingStatus(id, RecordingStatus.PROCESSING)
                 repository.updateRecordingDuration(id, duration)
                 repository.clearSession()

@@ -7,6 +7,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Named
 import javax.inject.Singleton
+import com.example.twinmindrecordingapphomeassignment.BuildConfig
+
 
 // NetworkModule.kt
 @Module
@@ -15,7 +17,7 @@ object NetworkModule {
     @Provides
     @Named("openai_api_key")
     fun provideOpenAIApiKey(): String {
-        return "" // Store this securely
+        return  "" // Store this securely
     }
 
     @Provides

@@ -13,6 +13,7 @@ import com.example.twinmindrecordingapphomeassignment.data.local.entities.Record
 import com.example.twinmindrecordingapphomeassignment.data.local.entities.RecordingSessionEntity
 import com.example.twinmindrecordingapphomeassignment.data.remote.api.ChatGptService
 import com.example.twinmindrecordingapphomeassignment.data.remote.api.MockTranscriptionService
+import com.example.twinmindrecordingapphomeassignment.data.remote.api.WhisperApiService
 import com.example.twinmindrecordingapphomeassignment.data.remote.dto.SummaryResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,7 @@ class RecordingRepository @Inject constructor(
     private val audioChunkDao: AudioChunkDao,
     private val sessionDao: RecordingSessionDao,
     private val chatGptService: ChatGptService,
-    private val transcriptionService: MockTranscriptionService,
+    private val transcriptionService: WhisperApiService,
     private val gson: Gson
 ) {
 
@@ -118,7 +119,7 @@ class RecordingRepository @Inject constructor(
                 return Result.failure(Exception("Audio file not found"))
             }
 
-            val transcript = transcriptionService.transcribeAudio(audioFile)
+            val transcript = transcriptionService.transcribe(audioFile)
             audioChunkDao.updateChunkTranscript(chunkId, true, transcript)
             /*   val chunk = audioChunkDao.getChunkById(chunkId)
           //  Log.d("RecordingRepository", "Chunk sequence: ${chunk.sequence}")

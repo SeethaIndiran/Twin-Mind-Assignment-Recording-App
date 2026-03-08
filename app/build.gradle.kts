@@ -19,6 +19,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+
+        val openAiKey = System.getenv("OPENAI_API_KEY") ?: ""
+        val whisperKey = System.getenv("WHISPER_API_KEY") ?: ""
+
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openAiKey\"")
+        buildConfigField("String", "WHISPER_API_KEY", "\"$whisperKey\"")
+
+
     }
 
     androidResources {
@@ -43,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
 }
